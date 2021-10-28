@@ -60,7 +60,7 @@ def draw_multipliers(name, data):
 
 
 def calculate_equity_value(data):
-    data["Equity"] = data["Volume"] * data["Adj Close"]
+    data["Equity"] = data["Volume"] * data["Close"]
     return data[["Date", "Equity"]].to_dict('records')
 
 
@@ -106,6 +106,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
+    sheet_name: str
     for sheet_name in df:
         companies_data[sheet_name] = {
             "general_data": extract_sheet_data(df[sheet_name]),
