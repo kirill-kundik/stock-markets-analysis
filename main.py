@@ -7,7 +7,7 @@ import pandas
 
 
 def draw_multipliers(name, data):
-    currency = "USD in millions" if name != "Airbus" else "Euros in millions"
+    currency = "USD in millions"
 
     dates = []
     ev_ebitda_values = []
@@ -76,7 +76,7 @@ def extract_sheet_data(sheet):
 
 
 def draw_data(name, data, columns):
-    currency = "USD in millions" if name != "Airbus" else "Euros in millions"
+    currency = "USD in millions"
 
     for column in columns:
         years = []
