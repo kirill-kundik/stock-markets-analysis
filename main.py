@@ -54,10 +54,33 @@ def draw_predictions(merged_data, data):
             ) * target_general_data[record_date.year]["EBITDA"] / target_volume
         )
 
-        # ev_ebitda_values.append(enterprise_value / year_data["EBITDA"])
-        # ev_s_values.append(enterprise_value / year_data["Total revenue"])
-        # p_e_values.append(record["Equity"] / year_data["Net income"])
-        # p_bv_values.append(record["Equity"] / year_data["Book value"])
+        ev_s_values.append(
+            statistics.mean(
+                [
+                    companies_enterprise_values[c] / data[c]["general_data"][record_date.year]["Total revenue"]
+                    for c in companies
+                ] + [target_enterprise / target_general_data[record_date.year]["Total revenue"]]
+            ) * target_general_data[record_date.year]["Total revenue"] / target_volume
+        )
+
+        p_e_values.append(
+            statistics.mean(
+                [
+                    companies_equities[c] / data[c]["general_data"][record_date.year]["Net income"]
+                    for c in companies
+                ] + [target_equity / target_general_data[record_date.year]["Net income"]]
+            ) * target_general_data[record_date.year]["Net income"] / target_volume
+        )
+
+        p_bv_values.append(
+            statistics.mean(
+                [
+                    companies_equities[c] / data[c]["general_data"][record_date.year]["Book value"]
+                    for c in companies
+                ] + [target_equity / target_general_data[record_date.year]["Book value"]]
+            ) * target_general_data[record_date.year]["Book value"] / target_volume
+        )
+
         dates.append(record_date)
         real_price_values.append(target_close)
 
@@ -75,26 +98,26 @@ def draw_predictions(merged_data, data):
     plt.title(f"Prediction by mean(EV / EBITDA) in {currency}")
     plt.show()
 
-    # plt.plot(dates, ev_s_values)
-    # plt.xlabel("Years")
-    # plt.ylabel("EV / S")
-    # plt.gcf().autofmt_xdate()
-    # plt.title(f"Prediction by mean(EV / S) in {currency}")
-    # plt.show()
-    #
-    # plt.plot(dates, p_e_values)
-    # plt.xlabel("Years")
-    # plt.ylabel("P / E")
-    # plt.gcf().autofmt_xdate()
-    # plt.title(f"Prediction by mean(P(equity value) / Net Income) in {currency}")
-    # plt.show()
-    #
-    # plt.plot(dates, p_bv_values)
-    # plt.xlabel("Years")
-    # plt.ylabel("P / BV")
-    # plt.gcf().autofmt_xdate()
-    # plt.title(f"Prediction by mean(P(Equity value) / Book Value) in {currency}")
-    # plt.show()
+    plt.plot(dates, ev_s_values)
+    plt.xlabel("Years")
+    plt.ylabel("EV / S")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"Prediction by mean(EV / S) in {currency}")
+    plt.show()
+
+    plt.plot(dates, p_e_values)
+    plt.xlabel("Years")
+    plt.ylabel("P / E")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"Prediction by mean(P(equity value) / Net Income) in {currency}")
+    plt.show()
+
+    plt.plot(dates, p_bv_values)
+    plt.xlabel("Years")
+    plt.ylabel("P / BV")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"Prediction by mean(P(Equity value) / Book Value) in {currency}")
+    plt.show()
 
 
 def calculate_equity_value(data):
