@@ -1,62 +1,100 @@
 import datetime
 import pathlib
+import statistics
 import time
 
 import matplotlib.pyplot as plt
 import pandas
 
 
-def draw_multipliers(name, data):
-    currency = "USD in millions"
+def draw_predictions(merged_data, data):
+    merged_data = pandas.read_csv(merged_data)
+    currency = "USD"
+    target_company = "Boeing Aerospace"
+    companies = ["Airbus", "Lockheed Martin"]
 
     dates = []
+    real_price_values = []
     ev_ebitda_values = []
     ev_s_values = []
     p_e_values = []
     p_bv_values = []
 
-    for record in data["equity"]:
+    for index, record in merged_data.iterrows():
         record_date = datetime.date.fromisoformat(record["Date"])
 
         if record_date.year == 2021:
             continue
 
-        year_data = data["general_data"][record_date.year]
-        enterprise_value = record["Equity"] + year_data["Total liabilities (Debt)"]
+        target_data = data[target_company]
+        target_general_data = target_data["general_data"]
+        target_close = record[f"Close_{target_data['symbol']}"]
+        target_volume = record[f"Volume_{target_data['symbol']}"]
+        target_equity = target_close * target_volume
+        target_enterprise = target_equity + target_general_data[record_date.year]["Total liabilities (Debt)"]
 
-        ev_ebitda_values.append(enterprise_value / year_data["EBITDA"])
-        ev_s_values.append(enterprise_value / year_data["Total revenue"])
-        p_e_values.append(record["Equity"] / year_data["Net income"])
-        p_bv_values.append(record["Equity"] / year_data["Book value"])
+        companies_equities = {
+            c:
+                record[f"Close_{data[c]['symbol']}"] * record[f"Volume_{data[c]['symbol']}"]
+            for c in companies
+        }
+        companies_enterprise_values = {
+            c:
+                record[f"Close_{data[c]['symbol']}"] * record[f"Volume_{data[c]['symbol']}"] +
+                data[c]["general_data"][record_date.year]["Total liabilities (Debt)"]
+            for c in companies
+        }
+
+        ev_ebitda_values.append(
+            statistics.mean(
+                [
+                    companies_enterprise_values[c] / data[c]["general_data"][record_date.year]["EBITDA"]
+                    for c in companies
+                ] + [target_enterprise / target_general_data[record_date.year]["EBITDA"]]
+            ) * target_general_data[record_date.year]["EBITDA"] / target_volume
+        )
+
+        # ev_ebitda_values.append(enterprise_value / year_data["EBITDA"])
+        # ev_s_values.append(enterprise_value / year_data["Total revenue"])
+        # p_e_values.append(record["Equity"] / year_data["Net income"])
+        # p_bv_values.append(record["Equity"] / year_data["Book value"])
         dates.append(record_date)
+        real_price_values.append(target_close)
+
+    plt.plot(dates, real_price_values)
+    plt.xlabel("Years")
+    plt.ylabel(currency)
+    plt.gcf().autofmt_xdate()
+    plt.title(f"Real price in {currency}")
+    plt.show()
 
     plt.plot(dates, ev_ebitda_values)
     plt.xlabel("Years")
     plt.ylabel("EV / EBITDA")
     plt.gcf().autofmt_xdate()
-    plt.title(f"{name} EV / EBITDA ({currency})")
+    plt.title(f"Prediction by mean(EV / EBITDA) in {currency}")
     plt.show()
 
-    plt.plot(dates, ev_s_values)
-    plt.xlabel("Years")
-    plt.ylabel("EV / S")
-    plt.gcf().autofmt_xdate()
-    plt.title(f"{name} EV / S ({currency})")
-    plt.show()
-
-    plt.plot(dates, p_e_values)
-    plt.xlabel("Years")
-    plt.ylabel("P / E")
-    plt.gcf().autofmt_xdate()
-    plt.title(f"{name} P(equity value) / Net Income ({currency})")
-    plt.show()
-
-    plt.plot(dates, p_bv_values)
-    plt.xlabel("Years")
-    plt.ylabel("P / BV")
-    plt.gcf().autofmt_xdate()
-    plt.title(f"{name} P(Equity value) / Book Value ({currency})")
-    plt.show()
+    # plt.plot(dates, ev_s_values)
+    # plt.xlabel("Years")
+    # plt.ylabel("EV / S")
+    # plt.gcf().autofmt_xdate()
+    # plt.title(f"Prediction by mean(EV / S) in {currency}")
+    # plt.show()
+    #
+    # plt.plot(dates, p_e_values)
+    # plt.xlabel("Years")
+    # plt.ylabel("P / E")
+    # plt.gcf().autofmt_xdate()
+    # plt.title(f"Prediction by mean(P(equity value) / Net Income) in {currency}")
+    # plt.show()
+    #
+    # plt.plot(dates, p_bv_values)
+    # plt.xlabel("Years")
+    # plt.ylabel("P / BV")
+    # plt.gcf().autofmt_xdate()
+    # plt.title(f"Prediction by mean(P(Equity value) / Book Value) in {currency}")
+    # plt.show()
 
 
 def calculate_equity_value(data):
@@ -94,6 +132,9 @@ def draw_data(name, data, columns):
 
 
 if __name__ == "__main__":
+    skip_general_data_plotting = True
+    skip_equity_values_calculating = True
+    skip_calculating_predictions = False
     base_path = pathlib.Path(__file__).parent / "data"
     path = base_path / "Boeing Aerospace Company report.xlsx"
     companies_symbols = {"Boeing Aerospace": "BA", "Airbus": "AIR.PA", "Lockheed Martin": "LMT"}
@@ -117,12 +158,18 @@ if __name__ == "__main__":
     start_time = time.time()
 
     for company in companies_data:
+        if skip_general_data_plotting:
+            break
+
         draw_data(company, companies_data[company]["general_data"], line_chart_data)
 
     print(f"[INFO] --- Sheets drawing ended in {time.time() - start_time:.3f}s")
     start_time = time.time()
 
     for company in companies_data:
+        if skip_equity_values_calculating:
+            break
+
         companies_data[company]["equity"] = calculate_equity_value(
             pandas.read_csv(
                 f"{base_path}/{companies_data[company]['symbol']}.csv"
@@ -132,7 +179,7 @@ if __name__ == "__main__":
     print(f"[INFO] --- Stock data loading ended in {time.time() - start_time:.3f}s")
     start_time = time.time()
 
-    for company in companies_data:
-        draw_multipliers(company, companies_data[company])
+    if not skip_calculating_predictions:
+        draw_predictions("data/merged.csv", companies_data)
 
     print(f"[INFO] --- Multipliers calculation ended in {time.time() - start_time:.3f}s")
