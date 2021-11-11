@@ -22,16 +22,17 @@ def draw_predictions(merged_data, data):
 
     for index, record in merged_data.iterrows():
         record_date = datetime.date.fromisoformat(record["Date"])
+        record_date_year = record_date.year
 
-        if record_date.year == 2021:
-            continue
+        if record_date_year == 2021:
+            record_date_year = 2020
 
         target_data = data[target_company]
         target_general_data = target_data["general_data"]
         target_close = record[f"Close_{target_data['symbol']}"]
         target_volume = record[f"Volume_{target_data['symbol']}"]
         target_equity = target_close * target_volume
-        target_enterprise = target_equity + target_general_data[record_date.year]["Total liabilities (Debt)"]
+        target_enterprise = target_equity + target_general_data[record_date_year]["Total liabilities (Debt)"]
 
         companies_equities = {
             c:
@@ -41,44 +42,44 @@ def draw_predictions(merged_data, data):
         companies_enterprise_values = {
             c:
                 record[f"Close_{data[c]['symbol']}"] * record[f"Volume_{data[c]['symbol']}"] +
-                data[c]["general_data"][record_date.year]["Total liabilities (Debt)"]
+                data[c]["general_data"][record_date_year]["Total liabilities (Debt)"]
             for c in companies
         }
 
         ev_ebitda_values.append(
             statistics.mean(
                 [
-                    companies_enterprise_values[c] / data[c]["general_data"][record_date.year]["EBITDA"]
+                    companies_enterprise_values[c] / data[c]["general_data"][record_date_year]["EBITDA"]
                     for c in companies
-                ] + [target_enterprise / target_general_data[record_date.year]["EBITDA"]]
-            ) * target_general_data[record_date.year]["EBITDA"] / target_volume
+                ] + [target_enterprise / target_general_data[record_date_year]["EBITDA"]]
+            ) * target_general_data[record_date_year]["EBITDA"] / target_volume
         )
 
         ev_s_values.append(
             statistics.mean(
                 [
-                    companies_enterprise_values[c] / data[c]["general_data"][record_date.year]["Total revenue"]
+                    companies_enterprise_values[c] / data[c]["general_data"][record_date_year]["Total revenue"]
                     for c in companies
-                ] + [target_enterprise / target_general_data[record_date.year]["Total revenue"]]
-            ) * target_general_data[record_date.year]["Total revenue"] / target_volume
+                ] + [target_enterprise / target_general_data[record_date_year]["Total revenue"]]
+            ) * target_general_data[record_date_year]["Total revenue"] / target_volume
         )
 
         p_e_values.append(
             statistics.mean(
                 [
-                    companies_equities[c] / data[c]["general_data"][record_date.year]["Net income"]
+                    companies_equities[c] / data[c]["general_data"][record_date_year]["Net income"]
                     for c in companies
-                ] + [target_equity / target_general_data[record_date.year]["Net income"]]
-            ) * target_general_data[record_date.year]["Net income"] / target_volume
+                ] + [target_equity / target_general_data[record_date_year]["Net income"]]
+            ) * target_general_data[record_date_year]["Net income"] / target_volume
         )
 
         p_bv_values.append(
             statistics.mean(
                 [
-                    companies_equities[c] / data[c]["general_data"][record_date.year]["Book value"]
+                    companies_equities[c] / data[c]["general_data"][record_date_year]["Book value"]
                     for c in companies
-                ] + [target_equity / target_general_data[record_date.year]["Book value"]]
-            ) * target_general_data[record_date.year]["Book value"] / target_volume
+                ] + [target_equity / target_general_data[record_date_year]["Book value"]]
+            ) * target_general_data[record_date_year]["Book value"] / target_volume
         )
 
         dates.append(record_date)
