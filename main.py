@@ -16,9 +16,13 @@ def draw_predictions(merged_data, data):
     dates = []
     real_price_values = []
     ev_ebitda_values = []
+    ev_ebitda_delta = []
     ev_s_values = []
+    ev_s_delta = []
     p_e_values = []
+    p_e_delta = []
     p_bv_values = []
+    p_bv_delta = []
 
     for index, record in merged_data.iterrows():
         record_date = datetime.date.fromisoformat(record["Date"])
@@ -46,41 +50,45 @@ def draw_predictions(merged_data, data):
             for c in companies
         }
 
-        ev_ebitda_values.append(
-            statistics.mean(
-                [
-                    companies_enterprise_values[c] / data[c]["general_data"][record_date_year]["EBITDA"]
-                    for c in companies
-                ] + [target_enterprise / target_general_data[record_date_year]["EBITDA"]]
-            ) * target_general_data[record_date_year]["EBITDA"] / target_volume
-        )
+        ev_ebitda_value = statistics.mean(
+            [
+                companies_enterprise_values[c] / data[c]["general_data"][record_date_year]["EBITDA"]
+                for c in companies
+            ] + [target_enterprise / target_general_data[record_date_year]["EBITDA"]]
+        ) * target_general_data[record_date_year]["EBITDA"] / target_volume
 
-        ev_s_values.append(
-            statistics.mean(
-                [
-                    companies_enterprise_values[c] / data[c]["general_data"][record_date_year]["Total revenue"]
-                    for c in companies
-                ] + [target_enterprise / target_general_data[record_date_year]["Total revenue"]]
-            ) * target_general_data[record_date_year]["Total revenue"] / target_volume
-        )
+        ev_ebitda_values.append(ev_ebitda_value)
+        ev_ebitda_delta.append(ev_ebitda_value - target_close)
 
-        p_e_values.append(
-            statistics.mean(
-                [
-                    companies_equities[c] / data[c]["general_data"][record_date_year]["Net income"]
-                    for c in companies
-                ] + [target_equity / target_general_data[record_date_year]["Net income"]]
-            ) * target_general_data[record_date_year]["Net income"] / target_volume
-        )
+        ev_s_value = statistics.mean(
+            [
+                companies_enterprise_values[c] / data[c]["general_data"][record_date_year]["Total revenue"]
+                for c in companies
+            ] + [target_enterprise / target_general_data[record_date_year]["Total revenue"]]
+        ) * target_general_data[record_date_year]["Total revenue"] / target_volume
 
-        p_bv_values.append(
-            statistics.mean(
-                [
-                    companies_equities[c] / data[c]["general_data"][record_date_year]["Book value"]
-                    for c in companies
-                ] + [target_equity / target_general_data[record_date_year]["Book value"]]
-            ) * target_general_data[record_date_year]["Book value"] / target_volume
-        )
+        ev_s_values.append(ev_s_value)
+        ev_s_delta.append(ev_s_value - target_close)
+
+        p_e_value = statistics.mean(
+            [
+                companies_equities[c] / data[c]["general_data"][record_date_year]["Net income"]
+                for c in companies
+            ] + [target_equity / target_general_data[record_date_year]["Net income"]]
+        ) * target_general_data[record_date_year]["Net income"] / target_volume
+
+        p_e_values.append(p_e_value)
+        p_e_delta.append(p_e_value - target_close)
+
+        p_bv_value = statistics.mean(
+            [
+                companies_equities[c] / data[c]["general_data"][record_date_year]["Book value"]
+                for c in companies
+            ] + [target_equity / target_general_data[record_date_year]["Book value"]]
+        ) * target_general_data[record_date_year]["Book value"] / target_volume
+
+        p_bv_values.append(p_bv_value)
+        p_bv_delta.append(p_bv_value - target_close)
 
         dates.append(record_date)
         real_price_values.append(target_close)
@@ -99,11 +107,25 @@ def draw_predictions(merged_data, data):
     plt.title(f"Prediction by mean(EV / EBITDA) in {currency}")
     plt.show()
 
+    plt.plot(dates, ev_ebitda_delta)
+    plt.xlabel("Years")
+    plt.ylabel("Fair price (by mean(EV / EBITDA)) - Target price")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"ΔPrice in {currency}")
+    plt.show()
+
     plt.plot(dates, ev_s_values)
     plt.xlabel("Years")
     plt.ylabel("Fair price")
     plt.gcf().autofmt_xdate()
     plt.title(f"Prediction by mean(EV / S) in {currency}")
+    plt.show()
+
+    plt.plot(dates, ev_s_delta)
+    plt.xlabel("Years")
+    plt.ylabel("Fair price (by mean(EV / S)) - Target price")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"ΔPrice in {currency}")
     plt.show()
 
     plt.plot(dates, p_e_values)
@@ -113,11 +135,25 @@ def draw_predictions(merged_data, data):
     plt.title(f"Prediction by mean(P(equity value) / Net Income) in {currency}")
     plt.show()
 
+    plt.plot(dates, p_e_delta)
+    plt.xlabel("Years")
+    plt.ylabel("Fair price (by mean(P(equity value) / Net Income)) - Target price")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"ΔPrice in {currency}")
+    plt.show()
+
     plt.plot(dates, p_bv_values)
     plt.xlabel("Years")
     plt.ylabel("Fair price")
     plt.gcf().autofmt_xdate()
     plt.title(f"Prediction by mean(P(Equity value) / Book Value) in {currency}")
+    plt.show()
+
+    plt.plot(dates, p_bv_delta)
+    plt.xlabel("Years")
+    plt.ylabel("Fair price (by mean(P(Equity value) / Book Value)) - Target price")
+    plt.gcf().autofmt_xdate()
+    plt.title(f"ΔPrice in {currency}")
     plt.show()
 
 
